@@ -3,11 +3,7 @@
 // Your task: Implement a RAII wrapper class that automatically manages the connection.
 //
 // Instructions:
-//   1. Create a class called "ConnectionGuard" that:
-//      - Takes a DatabaseConnection* in its constructor
-//      - Calls connect() in the constructor
-//      - Calls disconnect() in the destructor
-//   2. Modify the functions below to use ConnectionGuard instead of manual connect/disconnect
+
 //   3. Ensure connections are properly closed even with early returns
 //
 // When fixed, the program should:
@@ -51,15 +47,23 @@ public:
     }
 };
 
-// TODO: Implement the ConnectionGuard class here
-// class ConnectionGuard {
-//     // Your implementation here
-// };
+//Implemented the ConnectionGuard class here
+class ConnectionGuard {
+private:
+    DatabaseConnection* DB;
+public:
+    ConnectionGuard(DatabaseConnection* db) : DB(db) {
+        DB->connect();
+    }
+    ~ConnectionGuard() {
+        DB->disconnect();
+    }
+};
 
 // This function has a bug: if simulateError is true, disconnect() is never called
 void queryDatabase(DatabaseConnection& db, bool simulateError) {
-    // TODO: Replace manual connect/disconnect with ConnectionGuard
-    db.connect();
+    //Replaced manual connect/disconnect with ConnectionGuard
+    ConnectionGuard guard(&db);
 
     db.query("SELECT * FROM users");
 
@@ -70,13 +74,11 @@ void queryDatabase(DatabaseConnection& db, bool simulateError) {
     }
 
     db.query("SELECT * FROM orders");
-    db.disconnect();
 }
 
 // This function also forgets to disconnect on early return
 void updateDatabase(DatabaseConnection& db, bool hasData) {
-    // TODO: Replace manual connect/disconnect with ConnectionGuard
-    db.connect();
+    ConnectionGuard guard(&db);
 
     if (!hasData) {
         std::cout << "  No data to update, returning early." << std::endl;
@@ -85,7 +87,6 @@ void updateDatabase(DatabaseConnection& db, bool hasData) {
     }
 
     db.query("UPDATE users SET active = true");
-    db.disconnect();
 }
 
 int main() {
