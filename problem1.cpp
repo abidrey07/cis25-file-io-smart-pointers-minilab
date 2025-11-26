@@ -15,40 +15,39 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
+using namespace std;
 
 struct Student {
-    std::string name;
+    string name;
     int id;
     double gpa;
 };
 
-std::vector<Student> readStudentsFromFile(std::string filename) {
-    std::vector<Student> students;
+vector<Student> readStudentsFromFile(const string& filename) {
+    vector<Student> students;
 
     std::ifstream file(filename);
 
-    // BUG 1: No error handling for file open failure
-    // Should check if file opened and throw an exception if not
-    // The caller should use try/catch to handle gracefully
+    if (!file) {
+        cerr << "Error opening file: " << filename << endl;
+        return students;
+    } //validation
 
     std::string line;
-
-    // BUG 2: Should skip the header row, but doesn't
+    getline(file,line); // skip first line (header)
 
     while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string field;
         Student s;
 
-        // BUG 3: Using wrong delimiter (space instead of comma)
-        // This causes names to be truncated at the first space
-        std::getline(ss, s.name, ' ');
+        std::getline(ss, s.name, ',');
 
         std::getline(ss, field, ',');
-        s.id = atoi(field.c_str());
+        s.id = stoi(field.c_str());
 
         std::getline(ss, field, ',');
-        s.gpa = atof(field.c_str());
+        s.gpa = stof(field.c_str());
 
         students.push_back(s);
     }
@@ -57,10 +56,7 @@ std::vector<Student> readStudentsFromFile(std::string filename) {
 }
 
 int main() {
-    // BUG 1 (continued): No try/catch block to handle file errors gracefully
-    // Should wrap in try/catch and exit with error message if exception thrown
-
-    std::vector<Student> students = readStudentsFromFile("data/students.csv");
+    std::vector<Student> students = readStudentsFromFile("../data/students.csv"); //fixed filename to lead to right directory
 
     std::cout << "Loaded " << students.size() << " students:" << std::endl;
     for (int i = 0; i < students.size(); i++) {
