@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/tmp/file-io-smart-pointers-minilab/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

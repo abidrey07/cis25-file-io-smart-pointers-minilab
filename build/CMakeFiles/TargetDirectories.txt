@@ -1,0 +1,6 @@
+/tmp/file-io-smart-pointers-minilab/build/CMakeFiles/problem1.dir
+/tmp/file-io-smart-pointers-minilab/build/CMakeFiles/problem2.dir
+/tmp/file-io-smart-pointers-minilab/build/CMakeFiles/problem3.dir
+/tmp/file-io-smart-pointers-minilab/build/CMakeFiles/problem4.dir
+/tmp/file-io-smart-pointers-minilab/build/CMakeFiles/edit_cache.dir
+/tmp/file-io-smart-pointers-minilab/build/CMakeFiles/rebuild_cache.dir
