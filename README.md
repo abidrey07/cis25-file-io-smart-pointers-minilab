@@ -1,4 +1,5 @@
 # Mini-Lab: File I/O and Smart Pointers
+**Completed by Abid Rey Magsambol**
 
 **CIS-25**
 **November 26, 2025**
