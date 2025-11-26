@@ -1,110 +1,112 @@
-// Problem 3: Broken Smart Pointer Code
-// This code has memory management bugs. Fix them using smart pointers.
+// Problem 4: Implement RAII
+// This code has a DatabaseConnection class that requires manual connect/disconnect calls.
+// Your task: Implement a RAII wrapper class that automatically manages the connection.
 //
 // Instructions:
-//   1. Replace raw pointers with appropriate smart pointers (unique_ptr or shared_ptr)
-//   2. Remove manual delete calls (smart pointers handle cleanup)
-//   3. Ensure no memory leaks occur, even with early returns
+//   1. Create a class called "ConnectionGuard" that:
+//      - Takes a DatabaseConnection* in its constructor
+//      - Calls connect() in the constructor
+//      - Calls disconnect() in the destructor
+//   2. Modify the functions below to use ConnectionGuard instead of manual connect/disconnect
+//   3. Ensure connections are properly closed even with early returns
 //
 // When fixed, the program should:
-//   - Create and use Student objects without memory leaks
-//   - Handle the early return case without leaking memory
-//   - Print destruction messages showing proper cleanup
+//   - Show "Connected to database" at start of each operation
+//   - Show "Disconnected from database" at end of each operation (even with early return!)
+//   - Never leave a connection open
 
 #include <iostream>
 #include <string>
-#include <vector>
-// TODO: Add #include <memory> for smart pointers
 
-class Student {
+// Simulates a database connection (don't modify this class)
+class DatabaseConnection {
 private:
-    std::string name;
-    int id;
+    bool connected;
+    std::string dbName;
 public:
-    Student(const std::string& n, int i) : name(n), id(i) {
-        std::cout << "Student created: " << name << std::endl;
+    DatabaseConnection(const std::string& name) : connected(false), dbName(name) {}
+
+    void connect() {
+        if (!connected) {
+            connected = true;
+            std::cout << "  [DB] Connected to " << dbName << std::endl;
+        }
     }
 
-    ~Student() {
-        std::cout << "Student destroyed: " << name << std::endl;
+    void disconnect() {
+        if (connected) {
+            connected = false;
+            std::cout << "  [DB] Disconnected from " << dbName << std::endl;
+        }
     }
 
-    std::string getName() const { return name; }
-    int getId() const { return id; }
+    bool isConnected() const { return connected; }
 
-    void print() const {
-        std::cout << "  " << name << " (ID: " << id << ")" << std::endl;
+    void query(const std::string& sql) {
+        if (connected) {
+            std::cout << "  [DB] Executing: " << sql << std::endl;
+        } else {
+            std::cout << "  [DB] ERROR: Not connected!" << std::endl;
+        }
     }
 };
 
-// BUG 1: This function leaks memory when returning early
-void processStudents(bool simulateError) {
-    // TODO: Convert these to smart pointers
-    Student* alice = new Student("Alice", 1001);
-    Student* bob = new Student("Bob", 1002);
+// TODO: Implement the ConnectionGuard class here
+// class ConnectionGuard {
+//     // Your implementation here
+// };
 
-    std::cout << "\nProcessing students..." << std::endl;
-    alice->print();
-    bob->print();
+// This function has a bug: if simulateError is true, disconnect() is never called
+void queryDatabase(DatabaseConnection& db, bool simulateError) {
+    // TODO: Replace manual connect/disconnect with ConnectionGuard
+    db.connect();
+
+    db.query("SELECT * FROM users");
 
     if (simulateError) {
-        std::cout << "Error occurred! Returning early..." << std::endl;
-        // BUG: Memory leak! alice and bob are never deleted
+        std::cout << "  Error occurred during query!" << std::endl;
+        // BUG: Connection is left open!
         return;
     }
 
-    std::cout << "Processing complete." << std::endl;
-
-    // These only run if we don't return early
-    delete alice;
-    delete bob;
+    db.query("SELECT * FROM orders");
+    db.disconnect();
 }
 
-// BUG 2: This function has a double-delete bug
-void demonstrateDoubleFree() {
-    // TODO: Convert to smart pointer to prevent double-delete
-    Student* student = new Student("Charlie", 1003);
+// This function also forgets to disconnect on early return
+void updateDatabase(DatabaseConnection& db, bool hasData) {
+    // TODO: Replace manual connect/disconnect with ConnectionGuard
+    db.connect();
 
-    student->print();
+    if (!hasData) {
+        std::cout << "  No data to update, returning early." << std::endl;
+        // BUG: Connection is left open!
+        return;
+    }
 
-    // Simulate passing pointer to two different "owners"
-    Student* owner1 = student;
-    Student* owner2 = student;
-
-    // BUG: Both owners try to delete - double free!
-    delete owner1;
-    // delete owner2;  // This would crash! Commented out to prevent crash.
-
-    // With shared_ptr, multiple owners would work correctly
-}
-
-// BUG 3: This function uses a pointer after it's deleted
-void demonstrateUseAfterFree() {
-    // TODO: Convert to smart pointer
-    Student* student = new Student("Diana", 1004);
-
-    student->print();
-
-    delete student;
-
-    // BUG: Using pointer after delete - undefined behavior!
-    // std::cout << "Name was: " << student->getName() << std::endl;
-    // Commented out to prevent crash, but this is the bug to fix
+    db.query("UPDATE users SET active = true");
+    db.disconnect();
 }
 
 int main() {
-    std::cout << "=== Test 1: Early return (should leak without fix) ===" << std::endl;
-    processStudents(true);
+    DatabaseConnection db("MainDatabase");
 
-    std::cout << "\n=== Test 2: Normal completion ===" << std::endl;
-    processStudents(false);
+    std::cout << "=== Test 1: Query with error (connection should still close) ===" << std::endl;
+    queryDatabase(db, true);
+    std::cout << "Connection still open? " << (db.isConnected() ? "YES (bug!)" : "No (correct)") << std::endl;
 
-    std::cout << "\n=== Test 3: Double-free scenario ===" << std::endl;
-    demonstrateDoubleFree();
+    std::cout << "\n=== Test 2: Query without error ===" << std::endl;
+    queryDatabase(db, false);
+    std::cout << "Connection still open? " << (db.isConnected() ? "YES (bug!)" : "No (correct)") << std::endl;
 
-    std::cout << "\n=== Test 4: Use-after-free scenario ===" << std::endl;
-    demonstrateUseAfterFree();
+    std::cout << "\n=== Test 3: Update with no data (early return) ===" << std::endl;
+    updateDatabase(db, false);
+    std::cout << "Connection still open? " << (db.isConnected() ? "YES (bug!)" : "No (correct)") << std::endl;
 
-    std::cout << "\n=== Program ending ===" << std::endl;
+    std::cout << "\n=== Test 4: Update with data ===" << std::endl;
+    updateDatabase(db, true);
+    std::cout << "Connection still open? " << (db.isConnected() ? "YES (bug!)" : "No (correct)") << std::endl;
+
+    std::cout << "\n=== All tests complete ===" << std::endl;
     return 0;
 }
