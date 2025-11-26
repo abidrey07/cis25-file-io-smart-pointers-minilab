@@ -4,15 +4,17 @@
 //
 // Expected output when fixed (using data/students.csv):
 //   Loaded 3 students:
-//   Alice Johnson (ID: 1001, GPA: 3.80)
-//   Bob Smith (ID: 1002, GPA: 3.50)
-//   Carol White (ID: 1003, GPA: 3.90)
+//   Alice Johnson (ID: 1001, GPA: 3.8)
+//   Bob Smith (ID: 1002, GPA: 3.5)
+//   Carol White (ID: 1003, GPA: 3.9)
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstdlib>
+#include <stdexcept>
 
 struct Student {
     std::string name;
@@ -23,8 +25,11 @@ struct Student {
 std::vector<Student> readStudentsFromFile(std::string filename) {
     std::vector<Student> students;
 
-    // BUG 1: No error checking if file opens successfully
     std::ifstream file(filename);
+
+    // BUG 1: No error handling for file open failure
+    // Should check if file opened and throw an exception if not
+    // The caller should use try/catch to handle gracefully
 
     std::string line;
 
@@ -36,24 +41,25 @@ std::vector<Student> readStudentsFromFile(std::string filename) {
         Student s;
 
         // BUG 3: Using wrong delimiter (space instead of comma)
+        // This causes names to be truncated at the first space
         std::getline(ss, s.name, ' ');
 
         std::getline(ss, field, ',');
-        s.id = std::stoi(field);
+        s.id = atoi(field.c_str());
 
         std::getline(ss, field, ',');
-        s.gpa = std::stod(field);
+        s.gpa = atof(field.c_str());
 
         students.push_back(s);
     }
-
-    // BUG 4: File is never closed (though RAII would handle this,
-    // explicitly closing is good practice when you're done early)
 
     return students;
 }
 
 int main() {
+    // BUG 1 (continued): No try/catch block to handle file errors gracefully
+    // Should wrap in try/catch and exit with error message if exception thrown
+
     std::vector<Student> students = readStudentsFromFile("data/students.csv");
 
     std::cout << "Loaded " << students.size() << " students:" << std::endl;
