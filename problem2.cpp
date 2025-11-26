@@ -14,7 +14,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-// TODO: Add #include <memory> for smart pointers
+#include <memory>
+
 
 class Student {
 private:
@@ -24,11 +25,9 @@ public:
     Student(const std::string& n, int i) : name(n), id(i) {
         std::cout << "Student created: " << name << std::endl;
     }
-
     ~Student() {
         std::cout << "Student destroyed: " << name << std::endl;
     }
-
     std::string getName() const { return name; }
     int getId() const { return id; }
 
@@ -39,9 +38,9 @@ public:
 
 // BUG 1: This function leaks memory when returning early
 void processStudents(bool simulateError) {
-    // TODO: Convert these to smart pointers
-    Student* alice = new Student("Alice", 1001);
-    Student* bob = new Student("Bob", 1002);
+   //converted to smart ptrs
+    std::unique_ptr<Student> alice(new Student("Alice", 1001));
+    std::unique_ptr<Student> bob(new Student("Bob", 1002));
 
     std::cout << "\nProcessing students..." << std::endl;
     alice->print();
@@ -49,47 +48,36 @@ void processStudents(bool simulateError) {
 
     if (simulateError) {
         std::cout << "Error occurred! Returning early..." << std::endl;
-        // BUG: Memory leak! alice and bob are never deleted
+        //smart ptrs automatically delete
         return;
     }
 
     std::cout << "Processing complete." << std::endl;
-
-    // These only run if we don't return early
-    delete alice;
-    delete bob;
 }
 
 // BUG 2: This function has a double-delete bug
 void demonstrateDoubleFree() {
-    // TODO: Convert to smart pointer to prevent double-delete
-    Student* student = new Student("Charlie", 1003);
+    // converted to smart pointer to prevent double-delete
+    std::shared_ptr<Student> student(new Student("Charlie", 1003));
 
+    // Simulated passing pointer to two different "owners"
+    std::shared_ptr<Student> owner1 = student;
+    std::shared_ptr<Student> owner2 = owner1 = student;
+    // Student* owner1 = student;
+    // Student* owner2 = student;
     student->print();
-
-    // Simulate passing pointer to two different "owners"
-    Student* owner1 = student;
-    Student* owner2 = student;
-
-    // BUG: Both owners try to delete - double free!
-    delete owner1;
-    // delete owner2;  // This would crash! Commented out to prevent crash.
-
+    owner1->print();
+    owner2->print();
     // With shared_ptr, multiple owners would work correctly
 }
 
 // BUG 3: This function uses a pointer after it's deleted
 void demonstrateUseAfterFree() {
-    // TODO: Convert to smart pointer
-    Student* student = new Student("Diana", 1004);
+    //convert to smart ptr
+    std::unique_ptr<Student> student(new Student("Diana", 1004));
 
     student->print();
-
-    delete student;
-
-    // BUG: Using pointer after delete - undefined behavior!
-    // std::cout << "Name was: " << student->getName() << std::endl;
-    // Commented out to prevent crash, but this is the bug to fix
+    std::cout << "Name was: " << student->getName() << std::endl;
 }
 
 int main() {
